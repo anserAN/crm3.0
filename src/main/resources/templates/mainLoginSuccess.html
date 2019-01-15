@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录页</title>
+    <!--引入vue-->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!--引入axios-->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 引入Element样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入Element组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入 ECharts 文件 -->
+    <script src="/crm/js/echarsTest.js"></script>
+
+    <!--引入jquery-->
+    <script src="/crm/js/jquery-3.3.1.min.js"></script>
+    <style>
+        .text {
+            font-size: 14px;
+        }
+         .item {
+             margin-bottom: 18px;
+         }
+
+        .clearfix:before,
+        .clearfix:after {
+            display: table;
+            content: "";
+        }
+        .clearfix:after {
+            clear: both;
+        }
+
+        .box-card {
+            width: 280px;
+        }
+        .item {
+            margin-top: 10px;
+            margin-right: 40px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div style="float: left">
+    <!--消息提示展示-->
+    <el-badge :value="count" class="item">
+        <el-button size="small" @click="toFollow">待回访客户</el-button>
+    </el-badge>
+
+    <el-dropdown trigger="click">
+  <span class="el-dropdown-link">
+    点我查看<i class="el-icon-caret-bottom el-icon--right"></i>
+  </span>
+        <el-dropdown-menu slot="dropdown" @click="toFollow">
+            <el-dropdown-item class="clearfix"  @click="toFollow">
+                评论
+                <el-badge class="mark" :value="12" @click="toFollow" />
+            </el-dropdown-item>
+            <el-dropdown-item class="clearfix">
+                回复
+                <el-badge class="mark" :value="3" />
+            </el-dropdown-item>
+        </el-dropdown-menu>
+    </el-dropdown>
+
+        <!--提示信息-->
+        <el-badge :value="count"  class="item">
+            <el-button class="share-button" size="small" icon="el-icon-bell" ></el-button>
+        </el-badge>
+    <!--card 跟踪信息-->
+<el-card class="box-card">
+    <div slot="header" class="clearfix">
+        <span>今日客户跟踪任务</span>
+        <el-button style="float: right; padding: 3px 0" type="text" @click="toFollow">查看详情</el-button>
+    </div>
+    <div v-for="o in 2" :key="o" class="text item">
+        {{'客户 ' + o }}
+    </div>
+</el-card>
+    <!--card 跟踪信息-->
+<el-card class="box-card">
+    <div slot="header" class="clearfix">
+        <span>本月累计客户新增</span>
+        <el-button style="float: right; padding: 3px 0" type="text" @click="toFollow">查看详情</el-button>
+    </div>
+    <div v-for="o in 4" :key="o" class="text item">
+        H级客户:{{o}}
+        A级客户:{{o}}
+        B级客户:{{o}}
+        C级客户:{{o}}
+    </div>
+   <!-- <div v-for="o in 2" :key="o" class="text item">
+        {{'客户 ' + o }}
+    </div>-->
+</el-card>
+    </div>
+<!--数据图表-->
+<!--<div id="main" style="width: 600px;height:400px;float:left;"></div>-->
+<div id="circle" style="width: 800px;height:600px;float:left;"></div>
+</div>
+<script>
+
+    var vm = new Vue({
+        el:"#app",
+        data:{
+            count:'',
+            H:3,
+        },
+        created:function () {
+            let url = "getCountNeedFollow";
+            let _self = this;
+            axios.post(url,{})
+                .then(function (response) {
+                        console.log(response.data);
+                    _self.count = response.data;
+                });
+            url = "listCustomerCountByLevel"
+            axios.post(url,{})
+                .then(function (response) {
+                    _self.setData(response.data);
+                })
+
+        },
+        methods:{
+            toFollow:function () {
+                window.location.href="toCustomerFollow";
+            },
+            setData:function (data) {
+                //初始化图表区域
+                var myChart = echarts.init(document.getElementById('circle'));
+
+                //设置数据
+                option = {
+                    title: {
+                        text: '基盘客户统计',
+                        subtext: '按等级',
+                        left: 'center'
+                    },
+                    tooltip : {
+                        trigger: 'item',
+                        formatter: "{a} <br/>{b} : {c} ({d}%)"
+                    },
+                    legend: {
+                        // orient: 'vertical',
+                        // top: 'middle',
+                        bottom: 10,
+                        left: 'center',
+                        data: [data[0].name, data[1].name,data[2].name,data[3].name]
+                    },
+                    series : [
+                        {
+                            type: 'pie',
+                            radius : '65%',
+                            center: ['50%', '50%'],
+                            selectedMode: 'single',
+                            data:data,
+                            itemStyle: {
+                                emphasis: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }
+                        }
+                    ]
+                };
+                // 使用刚指定的配置项和数据显示图表。
+                myChart.setOption(option);
+            }
+        }
+    })
+    /*--------统计图---------*/
+        //初始化图表区域
+    //var myChart = echarts.init(document.getElementById('main'));
+    //设置数据
+    /*option = {
+        title: {
+            text: '本周新增客户统计',
+            subtext: '对比上周'
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        legend: {
+            data:['1','2','3','4']
+        },//图例的数据数组。数组项通常为一个字符串，每一项代表一个系列的 name
+        toolbox: {
+            show: true,
+            feature: {
+                dataZoom: {
+                    yAxisIndex: 'none'
+                },
+                dataView: {readOnly: false},
+                magicType: {type: ['line', 'bar']},
+                restore: {},
+                saveAsImage: {}
+            }
+        },
+        xAxis:  {
+            type: 'category',
+            boundaryGap: false,
+            data: ['周一','周二','周三','周四','周五','周六','周日']
+        },
+        yAxis: {
+            type: 'value',
+            axisLabel: {
+                formatter: '{value}批'
+            }
+        },
+        series: [
+            {
+                name:'1',
+                type:'line',
+                data:[2, 5, 6, 3, 2, 10, 11],
+
+            },
+            {
+                name:'2',
+                type:'line',
+                data:[1, 2, 2, 1, 0, 5, 4],
+
+            },
+            {
+                name:'3',
+                type:'line',
+                data:[2, 1, 0, 1, 3, 3, 5],
+
+            },
+            {
+                name:'4',
+                type:'line',
+                data:[2, 2, 1, 0, 0, 4, 5],
+
+            }
+        ]
+    };
+    // 使用刚指定的配置项和数据显示图表。
+    myChart.setOption(option);*/
+
+
+
+</script>
+</body>
+</html>

@@ -4,7 +4,8 @@ import com.aaa.dao.ComplaintsMapper;
 import com.aaa.entity.Complaints;
 import com.aaa.entity.LxlEcharts;
 import com.aaa.service.ComplaintsService;
-import com.aaa.util.ExeclUtil;
+import com.aaa.util.LxlExcel;
+import com.aaa.util.LxlExeclUtil;
 import com.alibaba.fastjson.JSON;
 import com.github.pagehelper.PageHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +63,20 @@ public class ComplaintsServiceImpl implements ComplaintsService {
         PageHelper.startPage(pageNo, pageSize);
         List<Complaints> listComplaints = null;
         Integer totalComplaints = null;
+        String sort = query.get("sort").toString();
+        System.out.println(sort);
+        if(sort.equals("产品投诉")){
+            query.put("userid","产品投诉");
+        }
+        if(sort.equals("服务投诉")){
+            query.put("numbers","numbers");
+        }
+        if(sort.equals("客户意见")){
+            query.put("opinions","opinions");
+        }
+        if(sort.equals("其他")){
+            query.put("describes","describes");
+        }
         try {
             listComplaints = dao.listComplaints(query);
             for(Complaints complaint:listComplaints){
@@ -75,19 +90,21 @@ public class ComplaintsServiceImpl implements ComplaintsService {
                     complaint.setUsername(dao.getRecordById(complaint.getUserid()).get(0).get("name").toString());
                 }
                 //是否是客户意见
-                if(complaint.getNumbers()!=null){
+                if(complaint.getOpinions()!=null){
                     complaint.setSort("客户意见");
                 }
                 //是否是其他
-                if(complaint.getNumbers()!=null){
+                if(complaint.getDescribes()!=null){
                     complaint.setSort("其他");
                 }
-                //是否是其他
+                //解决者
                 if(complaint.getEndid()!=null){
                     complaint.setEndname(dao.getRecordById(complaint.getEndid()).get(0).get("name").toString());
                 }
                 //录入人
-                complaint.setRecordname(dao.getRecordById(complaint.getRecordid()).get(0).get("name").toString());
+                if(complaint.getRecordid()!=null){
+                    complaint.setRecordname(dao.getRecordById(complaint.getRecordid()).get(0).get("name").toString());
+                }
                 //客户姓名
                 complaint.setCustomername(dao.getCustomsById(complaint.getCustomerid()).get(0).get("customerName").toString());
             }
@@ -216,13 +233,10 @@ public class ComplaintsServiceImpl implements ComplaintsService {
     }
 
     @Override
-    public Map<String, Object> inExcel(List<Map<String, Object>> map3) {
+    public Map<String, Object> inExcel(String path) throws Exception {
+        List<Map<String, Object>> map3 =  LxlExcel.readXLSX(path);
         HashMap<String, Object> m = new HashMap<>();
         int ret = 0;
-        /*Map map2 = upload(file,this.filePath);
-        String a = map2.get("url").toString();
-        String path=filePath+a;
-        List<Map<String, Object>> map3 =  LxlExcel.readXLSX(path);*/
         for(Map<String, Object> map : map3){
             Complaints complaints = new Complaints();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -260,10 +274,8 @@ public class ComplaintsServiceImpl implements ComplaintsService {
         }
         if (ret>0){
             m.put("pa","导入成功");
-            //return returnSuccess("导入成功");
         }else {
             m.put("pa","导入失败");
-            //return returnError("导入失败");
         }
         return m;
     }
@@ -300,7 +312,7 @@ public class ComplaintsServiceImpl implements ComplaintsService {
             fields.put("content", "投诉内容");
             fields.put("comment", "编备注号");
             fields.put("isdel", "是否删除");
-            ExeclUtil.ListtoExecl(list, out, fields);
+            LxlExeclUtil.ListtoExecl(list, out, fields);
             out.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -380,17 +392,34 @@ public class ComplaintsServiceImpl implements ComplaintsService {
                 if(lists.size()>0){
                     if (sort.equals("degree")) {
                         op.add(new LxlEcharts("一般", Integer.parseInt(lists.get(0).get("value").toString())));
-                        op.add(new LxlEcharts("紧急", Integer.parseInt(lists.get(1).get("value").toString())));
-                        op.add(new LxlEcharts("非常紧急", Integer.parseInt(lists.get(2).get("value").toString())));
                     } else if (sort.equals("status")) {
                         op.add(new LxlEcharts("待处理", Integer.parseInt(lists.get(0).get("value").toString())));
-                        op.add(new LxlEcharts("正在处理", Integer.parseInt(lists.get(1).get("value").toString())));
-                        op.add(new LxlEcharts("已处理", Integer.parseInt(lists.get(2).get("value").toString())));
-                        op.add(new LxlEcharts("其他", Integer.parseInt(lists.get(3).get("value").toString())));
                     }else{
                         op.add(new LxlEcharts("电话", Integer.parseInt(lists.get(0).get("value").toString())));
+                    }
+                }
+                if(lists.size()>1){
+                    if (sort.equals("degree")) {
+                        op.add(new LxlEcharts("紧急", Integer.parseInt(lists.get(1).get("value").toString())));
+                    } else if (sort.equals("status")) {
+                        op.add(new LxlEcharts("正在处理", Integer.parseInt(lists.get(1).get("value").toString())));
+                    }else{
                         op.add(new LxlEcharts("传真", Integer.parseInt(lists.get(1).get("value").toString())));
+                    }
+                }
+                if(lists.size()>2){
+                    if (sort.equals("degree")) {
+                        op.add(new LxlEcharts("非常紧急", Integer.parseInt(lists.get(2).get("value").toString())));
+                    } else if (sort.equals("status")) {
+                        op.add(new LxlEcharts("已处理", Integer.parseInt(lists.get(2).get("value").toString())));
+                    }else{
                         op.add(new LxlEcharts("邮件", Integer.parseInt(lists.get(2).get("value").toString())));
+                    }
+                }
+                if(lists.size()>3){
+                    if (sort.equals("status")) {
+                        op.add(new LxlEcharts("其他", Integer.parseInt(lists.get(3).get("value").toString())));
+                    }else{
                         op.add(new LxlEcharts("其他", Integer.parseInt(lists.get(3).get("value").toString())));
                     }
                 }

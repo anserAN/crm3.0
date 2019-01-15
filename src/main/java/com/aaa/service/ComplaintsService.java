@@ -30,7 +30,7 @@ public interface ComplaintsService {
 
     Map<String, Object> editComplaints(Complaints complaints);
 
-    Map<String, Object> inExcel(List<Map<String, Object>> map);
+    Map<String, Object> inExcel(String path) throws Exception ;
 
     Map<String, Object> toExcel(Map<String, List<Complaints>> query) throws Exception;
 
